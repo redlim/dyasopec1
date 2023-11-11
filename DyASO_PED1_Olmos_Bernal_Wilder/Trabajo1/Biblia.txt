@@ -1,0 +1,36 @@
+19:25:06 ---------------Génesis---------------
+19:25:06 El proceso 22954 'echo hola' ha nacido.
+19:59:05 El proceso el pid a finalizar ha terminado
+19:59:05 se acabó el mundo
+19:59:06 El proceso el pid a finalizar ha terminado
+19:59:06 se acabó el mundo
+19:59:07 El proceso el pid a finalizar ha terminado
+19:59:07 se acabó el mundo
+19:59:08 El proceso el pid a finalizar ha terminado
+19:59:08 se acabó el mundo
+19:59:09 El proceso el pid a finalizar ha terminado
+19:59:09 se acabó el mundo
+19:59:10 El proceso el pid a finalizar ha terminado
+19:59:10 se acabó el mundo
+19:59:11 El proceso el pid a finalizar ha terminado
+19:59:11 se acabó el mundo
+19:59:12 El proceso el pid a finalizar ha terminado
+19:59:12 se acabó el mundo
+19:59:13 El proceso el pid a finalizar ha terminado
+19:59:13 se acabó el mundo
+19:59:14 El proceso el pid a finalizar ha terminado
+19:59:14 se acabó el mundo
+19:59:15 El proceso el pid a finalizar ha terminado
+19:59:15 se acabó el mundo
+19:59:16 El proceso el pid a finalizar ha terminado
+19:59:16 se acabó el mundo
+19:59:17 El proceso el pid a finalizar ha terminado
+19:59:17 se acabó el mundo
+19:59:18 El proceso el pid a finalizar ha terminado
+19:59:18 se acabó el mundo
+19:59:19 El proceso el pid a finalizar ha terminado
+19:59:19 se acabó el mundo
+19:59:20 El proceso el pid a finalizar ha terminado
+19:59:20 se acabó el mundo
+19:59:21 El proceso el pid a finalizar ha terminado
+19:59:21 se acabó el mundo
