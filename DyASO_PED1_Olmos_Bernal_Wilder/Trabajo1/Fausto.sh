@@ -84,18 +84,15 @@ function writeInPeriodicProcess() {
 }
 
 #Si el Demonio no está vivo lo crea
-processRunning="$(ps gl)";
-isDaemonRunning=$(grep -c 'Demonio.sh' "$processRunning")
-if [ -z "$isDaemonRunning" ]
+isDaemonRunning=$(ps gl | grep -c 'Demonio.sh')
+if [ $isDaemonRunning -lt 2 ]
 then
-    echo "el demonio está apagado o fuera de cobertura en este momento";
-    echo "Reiniciando ficheros";
     deleteAndCreateInitialFiles
     echo "arrancando demonio";
-    $(nohup sh ./Demonio.sh >> /dev/null  &) 
+    $(nohup ./Demonio.sh >> /dev/null  &) 
     initBible;
+    echo $isDaemonRunning
 fi
-echo $isDaemonRunning
 
 #ejecuta el comando run
 function executeRun() {
@@ -154,11 +151,10 @@ function executeHelp() {
 function findProccessInFile(){
 len=${#filesProcess[@]};
 start=0;
-result=0;
-while  [ $start -lt $len ] || [ $result -ne "" ]
+result="";
+while  [ $start -lt $len ] && [ "$result" = "" ]
     do
         processFile=${filesProcess[$start]};
-        start=$((start+1));
         while IFS= read -r line
         do
             #arrIN=(${line//' '/ });
@@ -166,16 +162,17 @@ while  [ $start -lt $len ] || [ $result -ne "" ]
             case $line in (*"$1"*)
                 result=$1;
             ;;esac
+        #return;
         done < $processFile;
+    let start=$start+1;
     done;
- $result;
 }
 
 #ejecuta el comando stop
 function executeStop() {
-result=$(findProccessInFile $1)
-echo $result;
-    if [ $result ]; then
+ findProccessInFile $1
+ echo "$result el resultado";
+    if [ "$result" != "" ]; then
         $(touch "$hellDirectory/$1");
     fi
 }
