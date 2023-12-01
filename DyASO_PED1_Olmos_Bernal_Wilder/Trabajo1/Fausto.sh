@@ -12,6 +12,10 @@ files=($processFile $serviceProcessFile $intervalProcessFile $devilProcessFile $
 filesProcess=($processFile $serviceProcessFile $intervalProcessFile);
 hellDirectory="Infierno"
 
+processFilePIDIndex=0
+serviceProcessPIDIndex=0
+intervalProcessPIDIndex=2
+
 # texto de ayuda
 helpText="NAME | NOMBRE\n
     fausto.sh \n
@@ -132,11 +136,11 @@ function executeRunPeriodic() {
 #ejecuta el comando list
 function executeList() {
     echo "Procesos:";
-    $(cat $processFile);
+    cat $processFile;
     echo "Procesos servicio:";
-    $(cat $serviceProcessFile);
+    cat $serviceProcessFile
     echo "Procesos periódicos:";
-    $(cat $intervalProcessFile);
+    cat $intervalProcessFile
 }
 
 
@@ -146,7 +150,33 @@ function executeHelp() {
 }
 
 #busca un pid en todos los ficheros
-#devuelve true si lo encuentra y false en otro caso.
+
+function findInFile() {
+    file=$2
+    index=0
+
+    if [ $file = $processFile ]; then
+        index=$processFilePIDIndex;
+    fi;
+
+      if [ $file = $serviceProcessFile ]; then
+        index=$serviceProcessPIDIndex;
+    fi;
+
+      if [ $file = $intervalProcessFile ]; then
+        index=$intervalProcessPIDIndex;
+    fi;
+
+    while IFS= read -r line
+    do
+        arrIN=(${line//' '/ });
+        pid=${arrIN[index]} ;
+        if [ "$pid" = "$1" ]; then
+            result=$1;
+        fi
+    #return;
+    done < $file;
+}
 
 function findProccessInFile(){
 len=${#filesProcess[@]};
@@ -155,15 +185,7 @@ result="";
 while  [ $start -lt $len ] && [ "$result" = "" ]
     do
         processFile=${filesProcess[$start]};
-        while IFS= read -r line
-        do
-            #arrIN=(${line//' '/ });
-            #echo ${arrIN[0]} ;
-            case $line in (*"$1"*)
-                result=$1;
-            ;;esac
-        #return;
-        done < $processFile;
+        findInFile $1 $processFile
     let start=$start+1;
     done;
 }
