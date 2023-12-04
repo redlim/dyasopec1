@@ -7,9 +7,10 @@ devilProcessFile="procesos_demonio";
 bibleFile="Biblia.txt";
 apocalipisFile="Apocalipsis";
 saintPeterFile="SanPedro";
-files=($processFile $serviceProcessFile $intervalProcessFile $devilProcessFile $bibleFile $apocalipisFile $saintPeterFile);
+files=($processFile $serviceProcessFile $intervalProcessFile $devilProcessFile $apocalipisFile $saintPeterFile);
 filesProcess=($processFile $serviceProcessFile $intervalProcessFile);
 hellDirectory="Infierno"
+tempFile="tempFile"
 
 processFilePIDIndex=0
 serviceProcessPIDIndex=0
@@ -17,8 +18,17 @@ intervalProcessTimeIndex=0
 intervalProcessPeriodIndex=1
 intervalProcessPIDIndex=2
 
-function writeInServiceProcess() {
-    echo $1 >> $serviceProcessFile;
+#para escribir en un fichero temporal
+function writeInTempFile() {
+    echo $1 >> $tempFile;
+}
+
+function moveTempFile() {
+    #movemos el fichero al destino en caso de que exista.
+    file=$1
+    if [ -f "$tempFile" ]; then
+        mv "$tempFile" "$file"
+    fi
 }
 
 function writeInPeriodicProcess() {
@@ -31,13 +41,8 @@ function writeBible() {
 }
 
 
-function deleteFiles() {
-    echo "finalizando procesos"
-}
-
 function killProcessAndChilds {
-    echo $1 
-    pstree -p |  grep $1 | grep -Eo '[0-9]{1,4}'
+    pstree -p "$1" | grep -o '([0-9]\+)' | grep -o '[0-9]\+' | tac | xargs -I {} kill -15 {}
 }
 
 function checkProcessInHellAndKillIt(){
@@ -92,17 +97,17 @@ function checkAndUpdateServiceProcessFile(){
         isProcessRunning=$(ps gl | grep -c $pid)
         if [ "$isProcessRunning" = 1 ]; then
             #obtenemos el comando basandonos en una expresión regular que nos lo de
-            command=$(grep -oP '^[0-9]+\s*\K.*' <<< "$currentLine")
+            command=$(grep -oP "'\K[^']+(?=')" <<< "$currentLine")
             #ejecuto el comando y obtener el nuevo pid
-            bash -c "'$command'" & PID=$!;
-            #apunta entrada en la lista de procesos_servicio
-            writeInServiceProcess "$PID $command";
+            eval $command & PID=$!;
             #escribimos en la biblia
             writeBible "El proceso $pid resucita con pid $PID"
-            #borramos la línea del fichero
-            $(sed -i "/$currentLine/d" "$serviceProcessFile")
+            #apunta entrada en un fichero temporal
+            writeInTempFile "$PID '$command'";
         fi
     done < $serviceProcessFile;
+    
+    moveTempFile $serviceProcessFile
 }
 
 function checkAndUpdateIntervalProcessFile(){
@@ -114,34 +119,31 @@ function checkAndUpdateIntervalProcessFile(){
         currentTime=${arrIN[$intervalProcessTimeIndex]};
         period=${arrIN[$intervalProcessPeriodIndex]};
         pid=${arrIN[$intervalProcessPIDIndex]};
-        command=$(grep -oE "'([^']+)'" <<< "$currentLine")
+        command=$(grep -oP "'\K[^']+(?=')" <<< "$currentLine")
           #si el pid se encuentra en el infierno matamos el proceso
         checkProcessInHellAndKillIt $pid $line $intervalProcessFile
-        echo " bo que pasa $currentTime $period $pid $command"
 
         #Si el tiempo que ha pasado es menor que el tiempo que tiene que estar en ejecución:
         if [ $currentTime -le $period ]; then 
             let "currentTime++"
+            writeInTempFile "$currentTime $period $pid $command";
 
-            $(sed -i "/$currentLine/d" "$intervalProcessFile")
-            writeInPeriodicProcess "$currentTime $period $pid $command";
         else 
             #si el proceso no está en ejecución:
             isProcessRunning=$(ps gl | grep -c $pid)
             if [ "$isProcessRunning" = 1 ]; then
                 #ejecuto el comando y obtener el nuevo pid
-                echo $command
-                bash -c "'$command'" & PID=$!;
-                #apunta entrada en la lista de procesos_servicio
-                writeInPeriodicProcess "0 $period $PID '$command'";
+                eval $command & PID=$!;
+                #apunta entrada en el fichero temporal
+                writeInTempFile "0 $period $PID '$command'";
                 #escribimos en la biblia
-                writeBible "El proceso $pid resucita con pid $PID"
-                #borramos la línea del fichero
-                $(sed -i "/$currentLine/d" "$intervalProcessFile")
+                writeBible "El proceso $pid se ha reencarnado con pid $PID"
             fi
         fi
     done < $intervalProcessFile;
 
+    #reescribimos en archivo.
+    moveTempFile $intervalProcessFile
 }
 
 
@@ -153,21 +155,83 @@ function checkProcessFiles() {
     checkAndUpdateIntervalProcessFile
 }
 
+function killProcessFile(){
+    #leemos línea a línea el fichero procesos
+    while IFS= read -r line
+    do
+        arrIN=(${line//' '/ });
+        pid=${arrIN[$processFilePIDIndex]} ;
+        #Matamos todos los procesos arrancados y sus hijos
+        killProcessAndChilds $pid 
+        writeBible "El proceso $pid ha terminado"
+
+    done < $processFile;
+}
+
+function killServiceFile(){
+   #leemos línea a línea el fichero procesos
+    while IFS= read -r line
+    do
+        currentLine=$line
+        arrIN=(${line//' '/ });
+        pid=${arrIN[$serviceProcessPIDIndex]};
+        #Matamos todos los procesos arrancados y sus hijos      
+        killProcessAndChilds $pid 
+        writeBible "El proceso $pid ha terminado"
+
+    done < $serviceProcessFile;
+}
+
+function killInterfalFile(){
+    #leemos línea a línea el fichero procesos
+    while IFS= read -r line
+    do
+        currentLine=$line
+        arrIN=(${line//' '/ });
+        pid=${arrIN[$intervalProcessPIDIndex]};
+        #Matamos todos los procesos arrancados y sus hijo      
+        killProcessAndChilds $pid
+        writeBible "El proceso $pid ha terminado"
+
+    done < $intervalProcessFile;
+}
+
+
+#Borrado de ficheros si existen
+deleteAndCreateInitialFiles() {
+    for file in ${files[@]}; do
+        #Borramos si existe el fichero
+        if [ -f "$file" ]; then
+            rm "$file";
+        fi
+    done
+
+    #borramos y creamos el directorio Infierno.
+    if [ -d "$hellDirectory" ]; then
+        rm -Rf "$hellDirectory";
+    fi
+
+    rm $apocalipisFile
+}
+
+function executeApocalipsis() {
+    writeBible "--------Apocalipsis-------"
+    killProcessFile
+    killInterfalFile
+    killServiceFile
+    deleteAndCreateInitialFiles
+    writeBible "Se acabó el mundo"
+}
+
 #Bucle mientras que no llegue el apocalipsis
 while [ ! -f "$apocalipisFile" ]
     do
         sleep 1s;
         #finish process of files
         checkProcessFiles
-        echo "waiting...";
     done
 
-rm $apocalipisFile
-
-#   -Lee las listas y revive los procesos cuando sea necaario dejando entradas en la biblia
-#   -Puede usar todos los ficheros temporales que quiera pero luego en el Apocalipsis hay que borrarlos
-#   -Hay que usar un lock para no acceder a las listas a la vez que Fausto
-#   -Ojo al cerrar los proceos, hay que terminar el arbol completo no sólo uno de ellos
-#Fin bucle
-#Apocalipsis: termino todos los procesos y limpio todo dejando sólo Fausto, el Demonio y la Biblia
-   
+#ejecutar el apocalipsis cuando llegue.
+if [ -f "$apocalipsisFile"]; then
+    executeApocalipsis
+fi

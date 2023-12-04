@@ -92,10 +92,10 @@ isDaemonRunning=$(ps gl | grep -c 'Demonio.sh')
 if [ $isDaemonRunning -lt 2 ]
 then
     deleteAndCreateInitialFiles
-    echo "arrancando demonio";
+    # arrancamos el demonio
     $(nohup ./Demonio.sh >> /dev/null  &) 
+    #escribimos en la biblia
     initBible;
-    echo $isDaemonRunning
 fi
 
 #ejecuta el comando run
@@ -178,6 +178,8 @@ function findInFile() {
     done < $file;
 }
 
+# buscamos si el proceso se encuentra en el fichero, si no es así ignoramos la orden.
+# si lo encontramos lo guardamos en la variable result.
 function findProccessInFile(){
 len=${#filesProcess[@]};
 start=0;
@@ -186,14 +188,13 @@ while  [ $start -lt $len ] && [ "$result" = "" ]
     do
         processFile=${filesProcess[$start]};
         findInFile $1 $processFile
-    let start=$start+1;
+        let start=$start+1;
     done;
 }
 
 #ejecuta el comando stop
 function executeStop() {
- findProccessInFile $1
- echo "$result el resultado";
+    findProccessInFile $1
     if [ "$result" != "" ]; then
         $(touch "$hellDirectory/$1");
     fi
